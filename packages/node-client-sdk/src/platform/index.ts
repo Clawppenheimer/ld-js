@@ -12,12 +12,6 @@ const packageJson = {
   version: '0.1.0',
 };
 
-interface PlatformRequest {
-  method: string;
-  url: string;
-  headers?: Record<string, string>;
-  body?: string | ArrayBuffer | Uint8Array;
-}
 
 interface PlatformResponse {
   status: number;
@@ -255,6 +249,7 @@ export class NodePlatform implements Platform {
     },
   ) => {
     // Use global EventSource if available (for testing), otherwise import
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const EventSourceClass = (global as any).EventSource || require('eventsource').EventSource;
     return new EventSourceClass(url, {
       headers: options?.headers,

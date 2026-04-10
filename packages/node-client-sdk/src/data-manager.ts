@@ -39,8 +39,8 @@ export class StreamingDataManager extends BaseDataManager implements DataManager
   async identify(
     identifyResolve: () => void,
     identifyReject: (err: Error) => void,
-    context: Context,
-    identifyOptions?: LDIdentifyOptions,
+    _context: Context,
+    _identifyOptions?: LDIdentifyOptions,
   ): Promise<void> {
     // In offline mode, resolve immediately
     // In streaming mode, the base class handles streaming connection

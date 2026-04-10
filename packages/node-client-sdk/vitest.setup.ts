@@ -9,12 +9,12 @@ class MockEventSource {
   readyState: number = 0;
   url: string;
   headers?: Record<string, string>;
-  addEventListener: (event: string, handler: Function) => void = vi.fn();
-  removeEventListener: (event: string, handler: Function) => void = vi.fn();
+  addEventListener: (event: string, handler: (...args: any[]) => any) => void = vi.fn();
+  removeEventListener: (event: string, handler: (...args: any[]) => any) => void = vi.fn();
   close: () => void = vi.fn();
-  onerror?: Function;
-  onmessage?: Function;
-  onopen?: Function;
+  onerror?: ((...args: any[]) => any) | null;
+  onmessage?: ((...args: any[]) => any) | null;
+  onopen?: ((...args: any[]) => any) | null;
 
   constructor(url: string, options?: { headers?: Record<string, string> }) {
     this.url = url;

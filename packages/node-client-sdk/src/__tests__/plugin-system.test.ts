@@ -59,7 +59,7 @@ describe('Plugin System', () => {
   it('should call plugin hooks on flag evaluation', () => {
     const hookMetadata = { name: '@test/evaluation-hook' };
     const beforeEvaluationHook = vi.fn((hookContext: any, data: any) => data);
-    const afterEvaluationHook = vi.fn((hookContext: any, data: any, detail: any) => data);
+    const afterEvaluationHook = vi.fn((hookContext: any, data: any, _detail: any) => data);
 
     const mockPlugin: LDPluginBase<unknown, Hook> = {
       getMetadata: () => ({

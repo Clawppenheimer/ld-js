@@ -273,13 +273,10 @@
 
   <script>
     const { ipcRenderer } = require('electron');
+    const { init } = require('unofficial-ld-electron-sdk');
 
-    // Handle flag updates from main process
-    ipcRenderer.on('flags-updated', (event, flagValues) => {
-      updateFlagsUI(flagValues);
-      updateStatus('connected');
-      addEventLog('Flag values updated');
-    });
+    let ldClient = null;
+    let config = null;
 
     // Update flags table
     function updateFlagsUI(flagValues) {
@@ -321,13 +318,26 @@
       log.scrollTop = log.scrollHeight;
     }
 
+    // Evaluate all flags
+    function evaluateAllFlags() {
+      if (!ldClient || !config) return {};
+
+      const flagValues = {};
+      for (const [key, flagConfig] of Object.entries(config.flags)) {
+        flagValues[key] = ldClient.variation(flagConfig.key, flagConfig.default);
+      }
+      return flagValues;
+    }
+
     // Track event
     async function trackEvent() {
       try {
-        await ipcRenderer.invoke('track-event', 'button-clicked', {
-          timestamp: new Date().toISOString(),
-        });
-        addEventLog('Event tracked: button-clicked');
+        if (ldClient) {
+          ldClient.track('button-clicked', {
+            timestamp: new Date().toISOString(),
+          });
+          addEventLog('Event tracked: button-clicked');
+        }
       } catch (error) {
         addEventLog(`Error: ${error.message}`);
       }
@@ -336,14 +346,17 @@
     // Identify new user
     async function identifyNewUser() {
       try {
-        const newUser = {
-          kind: 'user',
-          key: `electron-user-${Date.now()}`,
-          name: 'New User',
-        };
-        const flagValues = await ipcRenderer.invoke('identify-user', newUser);
-        addEventLog(`User identified: ${newUser.key}`);
-        updateFlagsUI(flagValues);
+        if (ldClient) {
+          const newUser = {
+            kind: 'user',
+            key: `electron-user-${Date.now()}`,
+            name: 'New User',
+          };
+          await ldClient.identify(newUser);
+          const flagValues = evaluateAllFlags();
+          addEventLog(`User identified: ${newUser.key}`);
+          updateFlagsUI(flagValues);
+        }
       } catch (error) {
         addEventLog(`Error: ${error.message}`);
       }
@@ -352,7 +365,7 @@
     // Refresh flags
     async function refreshFlags() {
       try {
-        const flagValues = await ipcRenderer.invoke('get-flags');
+        const flagValues = evaluateAllFlags();
         updateFlagsUI(flagValues);
         addEventLog('Flags refreshed');
       } catch (error) {
@@ -360,20 +373,50 @@
       }
     }
 
-    // Initial load
-    async function loadInitialFlags() {
+    // Initialize LaunchDarkly client
+    async function initializeClient() {
       try {
-        const flagValues = await ipcRenderer.invoke('get-flags');
-        updateFlagsUI(flagValues);
+        // Get configuration from main process
+        config = await ipcRenderer.invoke('get-config');
+        addEventLog('Config loaded from main process');
+
+        // Initialize LaunchDarkly client in renderer process
+        console.log('🚀 Initializing LaunchDarkly client...');
+        ldClient = init(config.environmentId, {
+          kind: 'user',
+          key: 'electron-user-123',
+          name: 'Desktop App User',
+          email: 'desktop@example.com',
+        });
+
+        addEventLog('Waiting for LaunchDarkly initialization...');
+
+        // Wait for client to initialize
+        await ldClient.waitForInitialization();
+        addEventLog('LaunchDarkly client initialized');
         updateStatus('connected');
-        addEventLog('Flags loaded');
+
+        // Load initial flag values
+        const flagValues = evaluateAllFlags();
+        updateFlagsUI(flagValues);
+        addEventLog('Flag values loaded');
+
+        // Listen for real-time flag updates
+        ldClient.on('change', () => {
+          console.log('🔄 Flag updated in real-time');
+          const flagValues = evaluateAllFlags();
+          updateFlagsUI(flagValues);
+          addEventLog('Flags updated (real-time change)');
+        });
       } catch (error) {
+        console.error('❌ Initialization error:', error);
         addEventLog(`Error: ${error.message}`);
+        updateStatus('error');
       }
     }
 
-    // Load on startup
-    loadInitialFlags();
+    // Initialize on startup
+    initializeClient();
   </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
   },
   "files": [],
   "references": [
-    { "path": "./packages/unofficial-ld-node-client-sdk" }
+    { "path": "./packages/unofficial-ld-node-client-sdk" },
+    { "path": "./packages/unofficial-ld-electron-sdk" }
   ]
 }

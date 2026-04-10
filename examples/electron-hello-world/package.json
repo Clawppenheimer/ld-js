@@ -9,7 +9,7 @@
     "dev": "electron . --debug"
   },
   "dependencies": {
-    "unofficial-ld-node-client-sdk": "^0.1.0"
+    "unofficial-ld-electron-sdk": "^0.1.0"
   },
   "devDependencies": {
     "electron": "^latest"

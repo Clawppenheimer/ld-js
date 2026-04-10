@@ -1,0 +1,50 @@
+{
+  "name": "unofficial-ld-electron-sdk",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Unofficial LaunchDarkly SDK for Electron applications",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@launchdarkly/js-sdk-common": "^2.0.0",
+    "@launchdarkly/js-client-sdk-common": "^1.0.0",
+    "eventsource": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "electron": "^latest"
+  },
+  "peerDependencies": {
+    "electron": "^20.0.0 || ^21.0.0 || ^22.0.0 || ^latest"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "launchdarkly",
+    "electron",
+    "feature-flags",
+    "feature-management",
+    "client-sdk"
+  ],
+  "author": "LaunchDarkly Community",
+  "license": "Apache-2.0"
+}

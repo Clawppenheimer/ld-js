@@ -1,162 +1,212 @@
 /**
- * Observability Example: unofficial-ld-node-client-sdk
+ * Observability Example: unofficial-ld-node-client-sdk with OpenTelemetry
  *
  * This example demonstrates:
  * 1. Initializing the LaunchDarkly client
- * 2. Creating and registering an observability plugin
- * 3. Evaluating feature flags with telemetry tracking
- * 4. Monitoring flag evaluations and events
- * 5. Viewing observability metrics
+ * 2. Setting up OpenTelemetry integration (OTLP endpoint)
+ * 3. Evaluating feature flags with automatic telemetry
+ * 4. Tracking metrics and traces automatically
+ * 5. Showing telemetry data being sent to OTLP endpoint
  */
 
 import { init } from 'unofficial-ld-node-client-sdk';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-proto-http';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { trace } from '@opentelemetry/api';
 
 /**
- * Example Observability Plugin
+ * OpenTelemetry Plugin for LaunchDarkly
  *
- * This plugin demonstrates how to hook into SDK events
- * to collect telemetry and monitoring data.
+ * This plugin demonstrates how to integrate OpenTelemetry with LaunchDarkly SDK
+ * to automatically collect and export telemetry data (traces, metrics, logs)
+ * to an OTLP-compatible endpoint.
  */
-class ObservabilityPlugin {
+class OpenTelemetryPlugin {
   constructor(options = {}) {
     this.serviceName = options.serviceName || 'ld-app';
-    this.environment = options.environment || 'development';
+    this.otelEndpoint = options.otelEndpoint || 'http://localhost:4318';
+    this.tracer = null;
     this.metrics = {
       evaluationCount: 0,
-      evaluationsByFlag: {},
       eventCount: 0,
-      eventsByType: {},
-      identifyCount: 0,
       startTime: Date.now(),
     };
   }
 
   getMetadata() {
     return {
-      name: 'observability-plugin',
+      name: 'opentelemetry-plugin',
       version: '1.0.0',
     };
   }
 
   register(client, metadata) {
-    console.log('📊 Observability Plugin registered');
+    // Get the global tracer
+    this.tracer = trace.getTracer('ld-opentelemetry-plugin', '1.0.0');
+
+    console.log('📊 OpenTelemetry Plugin registered');
     console.log(`   Service: ${this.serviceName}`);
-    console.log(`   Environment: ${this.environment}`);
-    console.log(`   Client-side ID: ${metadata.clientSideId}\n`);
+    console.log(`   OTLP Endpoint: ${this.otelEndpoint}`);
+    console.log(`   Tracer: Active\n`);
   }
 
   getHooks() {
     return [
       {
-        getMetadata: () => ({ name: 'observability-hook' }),
+        getMetadata: () => ({ name: 'otel-hook' }),
 
         beforeEvaluation: (context, evaluationData) => {
-          console.log(`📈 [EVAL] Flag: ${evaluationData.key}`);
+          // Create a span for flag evaluation
+          const span = this.tracer?.startSpan('ld:flag:evaluate', {
+            attributes: {
+              'launchdarkly.flag.key': evaluationData.key,
+              'launchdarkly.user.key': context.key,
+              'service.name': this.serviceName,
+            },
+          });
+
+          console.log(`📈 [TRACE] Flag evaluation started: ${evaluationData.key}`);
+
+          // Store span in context for afterEvaluation
+          evaluationData._span = span;
+
           return evaluationData;
         },
 
         afterEvaluation: (context, evaluationData, evaluationDetail) => {
-          // Track evaluation metrics
-          this.metrics.evaluationCount++;
-
-          if (!this.metrics.evaluationsByFlag[evaluationData.key]) {
-            this.metrics.evaluationsByFlag[evaluationData.key] = {
-              count: 0,
-              values: {},
-            };
+          // Update span with result
+          const span = evaluationData._span;
+          if (span) {
+            span.setAttributes({
+              'launchdarkly.flag.value': String(evaluationDetail.value),
+              'launchdarkly.variation.index': evaluationDetail.variationIndex ?? -1,
+            });
+            span.end();
           }
 
-          this.metrics.evaluationsByFlag[evaluationData.key].count++;
-          const valueStr = String(evaluationDetail.value);
-          this.metrics.evaluationsByFlag[evaluationData.key].values[valueStr] =
-            (this.metrics.evaluationsByFlag[evaluationData.key].values[valueStr] || 0) + 1;
-
-          console.log(`   ✓ Value: ${evaluationDetail.value} (user: ${context.key})`);
+          this.metrics.evaluationCount++;
+          console.log(`   ✓ Value: ${evaluationDetail.value} [trace recorded]\n`);
 
           return evaluationData;
         },
 
         beforeIdentify: (context, identifyData) => {
-          console.log(`👤 [IDENTIFY] User: ${identifyData.key}`);
-          this.metrics.identifyCount++;
+          const span = this.tracer?.startSpan('ld:user:identify', {
+            attributes: {
+              'launchdarkly.user.key': identifyData.key,
+              'launchdarkly.user.name': identifyData.name ?? 'unknown',
+            },
+          });
+
+          console.log(`👤 [TRACE] User identification: ${identifyData.key}`);
+          identifyData._span = span;
+
           return identifyData;
         },
 
         afterIdentify: (context, identifyData, result) => {
-          console.log(`   ✓ Identified successfully\n`);
+          const span = identifyData._span;
+          if (span) {
+            span.end();
+          }
+
+          console.log(`   ✓ Identified [trace recorded]\n`);
+
           return identifyData;
         },
 
         afterTrack: (context, eventKey, data) => {
-          // Track event metrics
+          const span = this.tracer?.startSpan('ld:event:track', {
+            attributes: {
+              'launchdarkly.event.key': eventKey,
+              'launchdarkly.user.key': context.key,
+            },
+          });
+
           this.metrics.eventCount++;
 
-          if (!this.metrics.eventsByType[eventKey]) {
-            this.metrics.eventsByType[eventKey] = 0;
-          }
-          this.metrics.eventsByType[eventKey]++;
-
-          console.log(`📍 [EVENT] ${eventKey} (user: ${context.key})`);
+          console.log(`📍 [TRACE] Event tracked: ${eventKey}`);
           if (data) {
-            console.log(`   Data: ${JSON.stringify(data)}\n`);
+            console.log(`   Data: ${JSON.stringify(data)}`);
           }
+
+          if (span) {
+            span.end();
+          }
+
+          console.log(`   ✓ Event span recorded\n`);
         },
       },
     ];
   }
 
   /**
-   * Get collected metrics
+   * Print telemetry report
    */
-  getMetrics() {
+  printTelemetryReport() {
     const uptime = Date.now() - this.metrics.startTime;
-    return {
-      uptime: `${(uptime / 1000).toFixed(2)}s`,
-      evaluations: {
-        total: this.metrics.evaluationCount,
-        byFlag: this.metrics.evaluationsByFlag,
-      },
-      events: {
-        total: this.metrics.eventCount,
-        byType: this.metrics.eventsByType,
-      },
-      identifies: this.metrics.identifyCount,
-    };
-  }
 
-  /**
-   * Print metrics report
-   */
-  printMetrics() {
-    const metrics = this.getMetrics();
+    console.log('\n' + '='.repeat(70));
+    console.log('📊 OPENTELEMETRY TELEMETRY REPORT');
+    console.log('='.repeat(70));
 
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 OBSERVABILITY METRICS REPORT');
-    console.log('='.repeat(60));
+    console.log(`\n🏠 Service: ${this.serviceName}`);
+    console.log(`📤 OTLP Exporter: ${this.otelEndpoint}`);
+    console.log(`⏱️  Uptime: ${(uptime / 1000).toFixed(2)}s`);
 
-    console.log(`\n⏱️  Uptime: ${metrics.uptime}`);
+    console.log(`\n📈 Spans Generated:`);
+    console.log(`   • Flag Evaluations: ${this.metrics.evaluationCount}`);
+    console.log(`   • Events Tracked: ${this.metrics.eventCount}`);
+    console.log(`   • Total Spans: ${this.metrics.evaluationCount + this.metrics.eventCount + 1}`);
 
-    console.log(`\n📈 Flag Evaluations: ${metrics.evaluations.total}`);
-    for (const [flagKey, data] of Object.entries(metrics.evaluations.byFlag)) {
-      console.log(`   • ${flagKey}: ${data.count} evaluations`);
-      for (const [value, count] of Object.entries(data.values)) {
-        console.log(`     - ${value}: ${count}x`);
-      }
-    }
+    console.log(`\n📤 Telemetry Data:`);
+    console.log(`   • Traces: Being exported to ${this.otelEndpoint}`);
+    console.log(`   • Metrics: Enabled via OpenTelemetry SDK`);
+    console.log(`   • Logs: Can be integrated via Pino/Winston + OTel`);
 
-    console.log(`\n📍 Events: ${metrics.events.total}`);
-    for (const [eventType, count] of Object.entries(metrics.events.byType)) {
-      console.log(`   • ${eventType}: ${count}x`);
-    }
+    console.log(`\n💡 Integration Points:`);
+    console.log(`   • APM Tools: Jaeger, Datadog, New Relic, etc.`);
+    console.log(`   • Observability Platforms: Grafana, Splunk, etc.`);
+    console.log(`   • Data Lakes: Collect and analyze at scale`);
 
-    console.log(`\n👤 User Identifications: ${metrics.identifies}`);
-
-    console.log('\n' + '='.repeat(60) + '\n');
+    console.log('\n' + '='.repeat(70) + '\n');
   }
 }
 
 async function main() {
-  const clientSideId = 'YOUR_CLIENT_SIDE_ID';
+  const environmentId = 'YOUR_ENVIRONMENT_ID';
+  const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318';
+
+  // Initialize OpenTelemetry SDK
+  console.log('🚀 Initializing OpenTelemetry...\n');
+
+  const otelResource = Resource.default().merge(
+    new Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: 'ld-observability-example',
+      [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+      environment: 'development',
+    }),
+  );
+
+  const otelSdk = new NodeSDK({
+    resource: otelResource,
+    traceExporter: new OTLPTraceExporter({
+      url: `${otelEndpoint}/v1/traces`,
+    }),
+    instrumentations: [getNodeAutoInstrumentations()],
+  });
+
+  try {
+    await otelSdk.start();
+    console.log(`✅ OpenTelemetry initialized`);
+    console.log(`   Exporter: OTLP (${otelEndpoint})\n`);
+  } catch (error) {
+    console.error('❌ OpenTelemetry initialization failed:', error);
+    process.exit(1);
+  }
 
   const userContext = {
     kind: 'user',
@@ -168,17 +218,17 @@ async function main() {
     },
   };
 
-  // Create observability plugin
-  const observabilityPlugin = new ObservabilityPlugin({
-    serviceName: 'ld-observability-app',
-    environment: 'production',
+  // Create OpenTelemetry plugin for LaunchDarkly
+  const otelPlugin = new OpenTelemetryPlugin({
+    serviceName: 'ld-observability-example',
+    otelEndpoint: otelEndpoint,
   });
 
-  console.log('🚀 Initializing LaunchDarkly client with observability...\n');
+  console.log('🚀 Initializing LaunchDarkly client with OpenTelemetry...\n');
 
-  // Initialize client with observability plugin
-  const client = init(clientSideId, userContext, {
-    plugins: [observabilityPlugin],
+  // Initialize client with OpenTelemetry plugin
+  const client = init(environmentId, userContext, {
+    plugins: [otelPlugin],
   });
 
   try {
@@ -187,25 +237,25 @@ async function main() {
     await client.waitForInitialization();
     console.log('✅ Client initialized\n');
 
-    // Simulate flag evaluations
+    // Evaluate feature flags (each creates a trace span)
     console.log('🎯 Evaluating feature flags:\n');
     const premiumFeatures = client.variation('premium-features', false);
     const betaAccess = client.variation('beta-access', false);
     const analyticsEnabled = client.variation('analytics-enabled', true);
     const darkMode = client.variation('dark-mode', false);
 
-    // Simulate re-evaluations (common in production)
+    // Re-evaluate flags (demonstrates multiple spans per flag)
     console.log('🔄 Re-evaluating flags...\n');
     client.variation('premium-features', false);
     client.variation('analytics-enabled', true);
 
-    // Simulate event tracking
+    // Track events (each creates a trace span)
     console.log('📍 Tracking custom events:\n');
     client.track('feature-viewed', { featureName: 'dashboard' });
     client.track('user-action', { action: 'button-click', value: 42 });
     client.track('page-loaded', { page: '/home', loadTime: 234 });
 
-    // Simulate identifying a new user
+    // Identify new user (creates a span)
     console.log('👤 Switching user context:\n');
     await client.identify({
       kind: 'user',
@@ -221,17 +271,24 @@ async function main() {
     const newUserPremium = client.variation('premium-features', false);
     client.track('feature-viewed', { featureName: 'limited' });
 
-    // Print observability metrics
-    observabilityPlugin.printMetrics();
+    // Print telemetry report
+    otelPlugin.printTelemetryReport();
 
     console.log('✨ Observability example completed!\n');
+
+    // Allow time for spans to be exported
+    console.log('⏳ Waiting for telemetry export...');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   } catch (error) {
     console.error('❌ Error during execution:', error);
     process.exit(1);
   } finally {
     console.log('🛑 Closing client...');
     await client.close();
-    console.log('✅ Client closed');
+
+    console.log('🛑 Shutting down OpenTelemetry...');
+    await otelSdk.shutdown();
+    console.log('✅ OpenTelemetry shutdown complete');
   }
 }
 

@@ -2,74 +2,97 @@
  * Hello World Example: unofficial-ld-node-client-sdk
  *
  * This example demonstrates:
- * 1. Initializing the LaunchDarkly client
- * 2. Creating a user context
- * 3. Evaluating feature flags
- * 4. Logging flag values
+ * 1. Initializing the LaunchDarkly client with environment ID
+ * 2. Requesting feature flags from the SDK
+ * 3. Evaluating feature flags in code
+ * 4. Logging flag names and values to console
+ * 5. Showing real-time updates when flags change
  */
 
 import { init } from 'unofficial-ld-node-client-sdk';
 
 async function main() {
-  // Initialize the client with a client-side ID
-  // Note: In a real application, use your actual client-side ID
-  const clientSideId = 'YOUR_CLIENT_SIDE_ID';
+  // Initialize the client with your LaunchDarkly environment ID (client-side)
+  // Get this from your LaunchDarkly project settings
+  const environmentId = 'YOUR_ENVIRONMENT_ID';
 
   // Create a user context
   const userContext = {
     kind: 'user',
-    key: 'user-123',
+    key: 'example-user-123',
     name: 'Example User',
     email: 'user@example.com',
   };
 
   console.log('🚀 Initializing LaunchDarkly client...');
-  const client = init(clientSideId, userContext);
+  console.log(`   Environment: ${environmentId}`);
+  console.log(`   User: ${userContext.name} (${userContext.key})\n`);
+
+  const client = init(environmentId, userContext);
 
   try {
-    // Wait for the client to initialize and connect
-    console.log('⏳ Waiting for client initialization...');
+    // Request feature flags from the SDK and wait for initialization
+    console.log('⏳ Requesting feature flags from LaunchDarkly...');
     await client.waitForInitialization();
-    console.log('✅ Client initialized successfully!');
+    console.log('✅ Client initialized and ready!\n');
 
     // Evaluate feature flags
-    console.log('\n📊 Evaluating feature flags:\n');
+    console.log('📊 Current feature flag values:\n');
 
-    // Example flag 1: Boolean flag
-    const newFeatureEnabled = client.variation('new-feature', false);
-    console.log(`  • new-feature: ${newFeatureEnabled}`);
+    const flags = [
+      { key: 'new-feature', default: false },
+      { key: 'user-theme', default: 'light' },
+      { key: 'max-retries', default: 3 },
+      { key: 'feature-config', default: { enabled: false } },
+    ];
 
-    // Example flag 2: String flag
-    const userTheme = client.variation('user-theme', 'light');
-    console.log(`  • user-theme: ${userTheme}`);
+    flags.forEach(({ key, default: defaultValue }) => {
+      const value = client.variation(key, defaultValue);
+      console.log(`  • ${key}: ${JSON.stringify(value)}`);
+    });
 
-    // Example flag 3: Number flag
-    const maxRetries = client.variation('max-retries', 3);
-    console.log(`  • max-retries: ${maxRetries}`);
+    // Listen for real-time flag updates
+    console.log('\n🔄 Listening for real-time flag updates...');
+    client.on('change', (context) => {
+      console.log('\n🔔 Flag change detected!');
+      flags.forEach(({ key, default: defaultValue }) => {
+        const value = client.variation(key, defaultValue);
+        console.log(`  • ${key}: ${JSON.stringify(value)}`);
+      });
+    });
 
-    // Example flag 4: JSON flag
-    const featureConfig = client.variation('feature-config', { enabled: false });
-    console.log(`  • feature-config: ${JSON.stringify(featureConfig)}`);
+    // Simulate a flag update scenario (in real app, would come from LD)
+    console.log('   (Waiting for updates from LaunchDarkly...)');
 
     // Track a custom event
     console.log('\n📈 Tracking custom event...');
-    client.track('hello-world-completed', { timestamp: new Date().toISOString() });
+    client.track('hello-world-completed', {
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    });
     console.log('✅ Event tracked');
 
-    // Identify as a different user
+    // Demonstrate user context changes
     console.log('\n👤 Identifying as different user...');
     await client.identify({
       kind: 'user',
-      key: 'user-456',
+      key: 'example-user-456',
       name: 'Another User',
+      email: 'another@example.com',
     });
     console.log('✅ User identified');
 
     // Evaluate flags for the new user
-    const newUserFeature = client.variation('new-feature', false);
-    console.log(`  • new-feature (for user-456): ${newUserFeature}`);
+    console.log('\n📊 Feature flags for new user:\n');
+    flags.forEach(({ key, default: defaultValue }) => {
+      const value = client.variation(key, defaultValue);
+      console.log(`  • ${key}: ${JSON.stringify(value)}`);
+    });
 
     console.log('\n✨ Hello World example completed!\n');
+
+    // Keep running for 5 seconds to listen for updates
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   } catch (error) {
     console.error('❌ Error during execution:', error);
     process.exit(1);

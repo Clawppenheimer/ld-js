@@ -28,9 +28,9 @@ The new-gen client-side SDK architecture (`js-client-sdk-common`) already has ev
 ```
 ld-js/
 ├── packages/
-│   ├── node-client-sdk/            # @unguibus/ld-node-client-sdk
-│   ├── electron-sdk/               # @unguibus/ld-electron-sdk
-│   └── observability-node-client/  # @unguibus/ld-observability-node-client
+│   ├── node-client-sdk/            # @Clawppenheimer/ld-node-client-sdk
+│   ├── electron-sdk/               # @Clawppenheimer/ld-electron-sdk
+│   └── observability-node-client/  # @Clawppenheimer/ld-observability-node-client
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                  # Build + test on PR/push
@@ -49,7 +49,7 @@ ld-js/
 
 ---
 
-## Package 1: `@unguibus/ld-node-client-sdk`
+## Package 1: `@Clawppenheimer/ld-node-client-sdk`
 
 ### Purpose
 
@@ -162,11 +162,11 @@ When a user passes `plugins: [new SomePlugin()]` in options, `LDClientImpl` auto
 
 ---
 
-## Package 2: `@unguibus/ld-observability-node-client`
+## Package 2: `@Clawppenheimer/ld-observability-node-client`
 
 ### Purpose
 
-A cleanroom observability plugin for client-side Node SDKs. Ships errors, logs, metrics, and traces to LaunchDarkly's observability backend via OTLP. Works with `@unguibus/ld-node-client-sdk` or any SDK that implements `LDPluginBase`.
+A cleanroom observability plugin for client-side Node SDKs. Ships errors, logs, metrics, and traces to LaunchDarkly's observability backend via OTLP. Works with `@Clawppenheimer/ld-node-client-sdk` or any SDK that implements `LDPluginBase`.
 
 ### Dependencies (from npm)
 
@@ -209,7 +209,7 @@ export class Observability implements LDPluginBase<unknown, Hook> {
   constructor(private readonly options?: ObservabilityOptions) {}
 
   getMetadata(): LDPluginMetadata {
-    return { name: '@unguibus/ld-observability-node-client' };
+    return { name: '@Clawppenheimer/ld-observability-node-client' };
   }
 
   register(
@@ -231,7 +231,7 @@ export class Observability implements LDPluginBase<unknown, Hook> {
     // Return inline hooks — do NOT use TracingHook from @launchdarkly/node-server-sdk-otel
     // Model after the browser plugin's approach (highlight-run/src/plugins/observe.ts)
     return [{
-      getMetadata: () => ({ name: '@unguibus/observability-hooks' }),
+      getMetadata: () => ({ name: '@Clawppenheimer/observability-hooks' }),
 
       afterEvaluation: (hookContext, data, detail) => {
         // Record flag evaluation as OTel span event
@@ -276,7 +276,7 @@ Cleanroom reimplementation of the telemetry pipeline. Ships data to LD's observa
 
 **Resource attributes** (stamped on every span/log/metric):
 - `highlight.project_id` = the credential string (client-side ID)
-- `telemetry.distro.name` = `@unguibus/ld-observability-node-client`
+- `telemetry.distro.name` = `@Clawppenheimer/ld-observability-node-client`
 - `telemetry.distro.version` = package version
 - `service.name` = from options
 - `service.version` = from options
@@ -386,7 +386,7 @@ export interface ObservabilityOptions {
 
 ---
 
-## Package 3: `@unguibus/ld-electron-sdk`
+## Package 3: `@Clawppenheimer/ld-electron-sdk`
 
 ### Purpose
 
@@ -397,12 +397,12 @@ Modern Electron SDK that wires together the node-client-sdk (main process) and t
 ```json
 {
   "dependencies": {
-    "@unguibus/ld-node-client-sdk": "workspace:*"
+    "@Clawppenheimer/ld-node-client-sdk": "workspace:*"
   },
   "peerDependencies": {
     "electron": ">=20.0.0",
     "@launchdarkly/js-client-sdk": "^4.x",
-    "@unguibus/ld-observability-node-client": "workspace:*"
+    "@Clawppenheimer/ld-observability-node-client": "workspace:*"
   }
 }
 ```
@@ -414,7 +414,7 @@ The renderer-side packages (`@launchdarkly/js-client-sdk`, `@launchdarkly/observ
 #### `src/main.ts` — Main Process Entry
 
 ```typescript
-import { init as initNodeClient } from '@unguibus/ld-node-client-sdk';
+import { init as initNodeClient } from '@Clawppenheimer/ld-node-client-sdk';
 import { createMainStateTracker } from './ipc/main-tracker';
 
 export function initializeInMain(
@@ -451,7 +451,7 @@ Usage in renderer:
 import { init } from '@launchdarkly/js-client-sdk';
 import { ObservabilityPlugin } from '@launchdarkly/observability';
 import { SessionReplayPlugin } from '@launchdarkly/session-replay';
-import { createRendererStateProvider } from '@unguibus/ld-electron-sdk/renderer';
+import { createRendererStateProvider } from '@Clawppenheimer/ld-electron-sdk/renderer';
 
 const ldClient = init('client-side-id', context, {
   stateProvider: createRendererStateProvider('client-side-id'),
@@ -507,12 +507,12 @@ Runs in renderer process. Implements the `stateProvider` interface expected by `
 ┌─────────────────────────────────────────────────────────────┐
 │ Main Process                                                │
 │                                                             │
-│  @unguibus/ld-node-client-sdk                               │
+│  @Clawppenheimer/ld-node-client-sdk                               │
 │    └─ streams flags from LD (single connection)             │
 │    └─ evaluates flags locally from cache                    │
 │    └─ HookRunner fires hooks on variation/identify/track    │
 │                                                             │
-│  @unguibus/ld-observability-node-client (plugin)            │
+│  @Clawppenheimer/ld-observability-node-client (plugin)            │
 │    └─ captures errors, logs, traces from main process       │
 │    └─ ships OTLP to LD observability backend                │
 │                                                             │
@@ -562,9 +562,9 @@ Runs in renderer process. Implements the `stateProvider` interface expected by `
 
 | Package | Depends On (npm) | Upstream Repo |
 |---|---|---|
-| `@unguibus/ld-node-client-sdk` | `@launchdarkly/js-sdk-common`, `@launchdarkly/js-client-sdk-common` | `launchdarkly/js-core` |
-| `@unguibus/ld-observability-node-client` | `@launchdarkly/js-sdk-common`, `@opentelemetry/*` | `launchdarkly/js-core`, `launchdarkly/observability-sdk` |
-| `@unguibus/ld-electron-sdk` | `@launchdarkly/js-client-sdk` (peer) | `launchdarkly/js-core` |
+| `@Clawppenheimer/ld-node-client-sdk` | `@launchdarkly/js-sdk-common`, `@launchdarkly/js-client-sdk-common` | `launchdarkly/js-core` |
+| `@Clawppenheimer/ld-observability-node-client` | `@launchdarkly/js-sdk-common`, `@opentelemetry/*` | `launchdarkly/js-core`, `launchdarkly/observability-sdk` |
+| `@Clawppenheimer/ld-electron-sdk` | `@launchdarkly/js-client-sdk` (peer) | `launchdarkly/js-core` |
 
 ### What To Watch For
 
@@ -658,7 +658,7 @@ jobs:
 
 ## Build Order & Milestones
 
-### Phase 1: `@unguibus/ld-node-client-sdk` (Foundation)
+### Phase 1: `@Clawppenheimer/ld-node-client-sdk` (Foundation)
 
 **Goal**: A working client-side Node SDK with plugin support.
 
@@ -671,7 +671,7 @@ jobs:
 7. Verify: hooks fire on `variation()`, `identify()`, `track()`
 8. Publish `0.1.0`
 
-### Phase 2: `@unguibus/ld-observability-node-client` (Telemetry)
+### Phase 2: `@Clawppenheimer/ld-observability-node-client` (Telemetry)
 
 **Goal**: Observability plugin that ships data to LD's backend using a client-side ID.
 
@@ -684,7 +684,7 @@ jobs:
 7. Verify: `console.error('test')` → log record in dashboard
 8. Publish `0.1.0`
 
-### Phase 3: `@unguibus/ld-electron-sdk` (Integration)
+### Phase 3: `@Clawppenheimer/ld-electron-sdk` (Integration)
 
 **Goal**: Electron SDK wiring main↔renderer with observability in both.
 
@@ -712,8 +712,8 @@ jobs:
 ### Electron App — Main Process
 
 ```typescript
-import { initializeInMain } from '@unguibus/ld-electron-sdk';
-import { Observability } from '@unguibus/ld-observability-node-client';
+import { initializeInMain } from '@Clawppenheimer/ld-electron-sdk';
+import { Observability } from '@Clawppenheimer/ld-observability-node-client';
 
 const ldClient = initializeInMain('client-side-id', context, {
   plugins: [
@@ -734,7 +734,7 @@ const showFeature = ldClient.variation('new-feature', false);
 import { init } from '@launchdarkly/js-client-sdk';
 import { ObservabilityPlugin } from '@launchdarkly/observability';
 import { SessionReplayPlugin } from '@launchdarkly/session-replay';
-import { createRendererStateProvider } from '@unguibus/ld-electron-sdk/renderer';
+import { createRendererStateProvider } from '@Clawppenheimer/ld-electron-sdk/renderer';
 
 const ldClient = init('client-side-id', context, {
   stateProvider: createRendererStateProvider(),
@@ -746,8 +746,8 @@ const ldClient = init('client-side-id', context, {
 ### Standalone Node (CLI tool, desktop agent, etc.)
 
 ```typescript
-import { init } from '@unguibus/ld-node-client-sdk';
-import { Observability } from '@unguibus/ld-observability-node-client';
+import { init } from '@Clawppenheimer/ld-node-client-sdk';
+import { Observability } from '@Clawppenheimer/ld-observability-node-client';
 
 const ldClient = init('client-side-id', context, {
   plugins: [new Observability({ serviceName: 'my-cli-tool' })],

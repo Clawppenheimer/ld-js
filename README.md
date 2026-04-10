@@ -28,7 +28,7 @@ The new-gen client-side SDK architecture (`js-client-sdk-common`) already has ev
 ```
 ld-js/
 ├── packages/
-│   ├── node-client-sdk/            # launchdarkly-node-server-sdk
+│   ├── node-client-sdk/            # launchdarkly-node-client-sdk
 │   ├── electron-sdk/               # @Clawppenheimer/ld-electron-sdk
 │   └── observability-node-client/  # @Clawppenheimer/ld-observability-node-client
 ├── .github/
@@ -49,7 +49,7 @@ ld-js/
 
 ---
 
-## Package 1: `launchdarkly-node-server-sdk`
+## Package 1: `launchdarkly-node-client-sdk`
 
 ### Purpose
 
@@ -166,7 +166,7 @@ When a user passes `plugins: [new SomePlugin()]` in options, `LDClientImpl` auto
 
 ### Purpose
 
-A cleanroom observability plugin for client-side Node SDKs. Ships errors, logs, metrics, and traces to LaunchDarkly's observability backend via OTLP. Works with `launchdarkly-node-server-sdk` or any SDK that implements `LDPluginBase`.
+A cleanroom observability plugin for client-side Node SDKs. Ships errors, logs, metrics, and traces to LaunchDarkly's observability backend via OTLP. Works with `launchdarkly-node-client-sdk` or any SDK that implements `LDPluginBase`.
 
 ### Dependencies (from npm)
 
@@ -397,7 +397,7 @@ Modern Electron SDK that wires together the node-client-sdk (main process) and t
 ```json
 {
   "dependencies": {
-    "launchdarkly-node-server-sdk": "workspace:*"
+    "launchdarkly-node-client-sdk": "workspace:*"
   },
   "peerDependencies": {
     "electron": ">=20.0.0",
@@ -414,7 +414,7 @@ The renderer-side packages (`@launchdarkly/js-client-sdk`, `@launchdarkly/observ
 #### `src/main.ts` — Main Process Entry
 
 ```typescript
-import { init as initNodeClient } from 'launchdarkly-node-server-sdk';
+import { init as initNodeClient } from 'launchdarkly-node-client-sdk';
 import { createMainStateTracker } from './ipc/main-tracker';
 
 export function initializeInMain(
@@ -507,7 +507,7 @@ Runs in renderer process. Implements the `stateProvider` interface expected by `
 ┌─────────────────────────────────────────────────────────────┐
 │ Main Process                                                │
 │                                                             │
-│  launchdarkly-node-server-sdk                               │
+│  launchdarkly-node-client-sdk                               │
 │    └─ streams flags from LD (single connection)             │
 │    └─ evaluates flags locally from cache                    │
 │    └─ HookRunner fires hooks on variation/identify/track    │
@@ -562,7 +562,7 @@ Runs in renderer process. Implements the `stateProvider` interface expected by `
 
 | Package | Depends On (npm) | Upstream Repo |
 |---|---|---|
-| `launchdarkly-node-server-sdk` | `@launchdarkly/js-sdk-common`, `@launchdarkly/js-client-sdk-common` | `launchdarkly/js-core` |
+| `launchdarkly-node-client-sdk` | `@launchdarkly/js-sdk-common`, `@launchdarkly/js-client-sdk-common` | `launchdarkly/js-core` |
 | `@Clawppenheimer/ld-observability-node-client` | `@launchdarkly/js-sdk-common`, `@opentelemetry/*` | `launchdarkly/js-core`, `launchdarkly/observability-sdk` |
 | `@Clawppenheimer/ld-electron-sdk` | `@launchdarkly/js-client-sdk` (peer) | `launchdarkly/js-core` |
 
@@ -658,7 +658,7 @@ jobs:
 
 ## Build Order & Milestones
 
-### Phase 1: `launchdarkly-node-server-sdk` (Foundation)
+### Phase 1: `launchdarkly-node-client-sdk` (Foundation)
 
 **Goal**: A working client-side Node SDK with plugin support.
 
@@ -746,7 +746,7 @@ const ldClient = init('client-side-id', context, {
 ### Standalone Node (CLI tool, desktop agent, etc.)
 
 ```typescript
-import { init } from 'launchdarkly-node-server-sdk';
+import { init } from 'launchdarkly-node-client-sdk';
 import { Observability } from '@Clawppenheimer/ld-observability-node-client';
 
 const ldClient = init('client-side-id', context, {

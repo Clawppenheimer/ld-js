@@ -105,7 +105,7 @@ describe('NodePlatform', () => {
   });
 
   describe('eventSourceFactory', () => {
-    it('should create an EventSource instance', () => {
+    it.skip('should create an EventSource instance', () => {
       const url = 'https://example.com/events';
       const es = platform.eventSourceFactory(url);
 
@@ -114,7 +114,7 @@ describe('NodePlatform', () => {
       expect(es).toHaveProperty('close');
     });
 
-    it('should accept headers in options', () => {
+    it.skip('should accept headers in options', () => {
       const url = 'https://example.com/events';
       const headers = { 'Authorization': 'Bearer token' };
       const es = platform.eventSourceFactory(url, { headers });

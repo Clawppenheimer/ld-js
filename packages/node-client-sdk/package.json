@@ -1,6 +1,7 @@
 {
   "name": "@Clawppenheimer/ld-node-client-sdk",
   "version": "0.1.0",
+  "private": false,
   "description": "Modern LaunchDarkly client-side SDK for Node.js with plugin support",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

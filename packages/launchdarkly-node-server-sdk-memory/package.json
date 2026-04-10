@@ -1,0 +1,44 @@
+{
+  "name": "launchdarkly-node-server-sdk-memory",
+  "version": "0.1.0",
+  "private": false,
+  "description": "In-memory persistent feature store for LaunchDarkly Node.js server SDK",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@launchdarkly/node-server-sdk": "^7.0.0 || ^8.0.0"
+  },
+  "devDependencies": {
+    "@launchdarkly/node-server-sdk": "^7.0.0 || ^8.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "launchdarkly",
+    "feature-store",
+    "persistent-store",
+    "in-memory"
+  ],
+  "author": "LaunchDarkly Community",
+  "license": "Apache-2.0"
+}

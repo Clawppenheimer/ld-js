@@ -1,4 +1,4 @@
-# @unguibus/ld-node-client-sdk
+# unofficial-ld-node-client-sdk
 
 A modern, plugin-enabled LaunchDarkly client-side SDK for Node.js with full observability support.
 
@@ -16,13 +16,13 @@ A modern, plugin-enabled LaunchDarkly client-side SDK for Node.js with full obse
 ## Installation
 
 ```bash
-npm install @unguibus/ld-node-client-sdk
+npm install unofficial-ld-node-client-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { init } from '@unguibus/ld-node-client-sdk';
+import { init } from 'unofficial-ld-node-client-sdk';
 
 const client = init('your-client-side-id', {
   kind: 'user',
@@ -57,7 +57,7 @@ await client.close();
 ## Configuration
 
 ```typescript
-import { init } from '@unguibus/ld-node-client-sdk';
+import { init } from 'unofficial-ld-node-client-sdk';
 
 const client = init('client-side-id', context, {
   // Cache flags locally in this directory
@@ -93,7 +93,7 @@ const client = init('client-side-id', context, {
 You can extend the SDK with plugins:
 
 ```typescript
-import { init } from '@unguibus/ld-node-client-sdk';
+import { init } from 'unofficial-ld-node-client-sdk';
 import { Observability } from '@unguibus/ld-observability-node-client';
 
 const client = init('client-side-id', context, {

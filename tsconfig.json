@@ -5,6 +5,6 @@
   },
   "files": [],
   "references": [
-    { "path": "./packages/launchdarkly-node-client-sdk" }
+    { "path": "./packages/unofficial-ld-node-client-sdk" }
   ]
 }

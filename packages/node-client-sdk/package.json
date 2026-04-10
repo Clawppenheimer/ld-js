@@ -1,5 +1,5 @@
 {
-  "name": "@Clawppenheimer/ld-node-client-sdk",
+  "name": "launchdarkly-node-server-sdk",
   "version": "0.1.0",
   "private": false,
   "description": "Modern LaunchDarkly client-side SDK for Node.js with plugin support",

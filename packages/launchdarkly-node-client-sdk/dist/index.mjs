@@ -241,7 +241,7 @@ var StreamingDataManager = class extends BaseDataManager {
       diagnosticsManager
     );
   }
-  async identify(identifyResolve, identifyReject, context, identifyOptions) {
+  async identify(identifyResolve, identifyReject, _context, _identifyOptions) {
     try {
       identifyResolve();
     } catch (error) {
@@ -267,6 +267,26 @@ var createStreamingDataManager = (flagManager, config, baseHeaders, emitter, dia
 function init(clientSideId, context, options) {
   const platform2 = createPlatform(options);
   const dataManagerFactory = options?.dataManagerFactory || createStreamingDataManager;
+  const plugins = options?.plugins || [];
+  const getImplementationHooks = (environmentMetadata) => {
+    const hooks = [];
+    plugins.forEach((plugin) => {
+      try {
+        if (plugin.register) {
+          plugin.register(void 0, environmentMetadata);
+        }
+        if (plugin.getHooks) {
+          const pluginHooks = plugin.getHooks();
+          if (Array.isArray(pluginHooks)) {
+            hooks.push(...pluginHooks);
+          }
+        }
+      } catch (error) {
+        console.error(`Error registering plugin: ${error}`);
+      }
+    });
+    return hooks;
+  };
   const client = new LDClientImpl(
     clientSideId,
     AutoEnvAttributes.Enabled,
@@ -275,7 +295,11 @@ function init(clientSideId, context, options) {
       credentialType: "clientSideId",
       ...options
     },
-    dataManagerFactory
+    dataManagerFactory,
+    {
+      getImplementationHooks,
+      credentialType: "clientSideId"
+    }
   );
   client.identify?.(context);
   return client;

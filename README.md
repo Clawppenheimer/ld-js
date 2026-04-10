@@ -28,7 +28,7 @@ The new-gen client-side SDK architecture (`js-client-sdk-common`) already has ev
 ```
 ld-js/
 ├── packages/
-│   ├── node-client-sdk/            # launchdarkly-node-client-sdk
+│   ├── client-sdk/            # launchdarkly-node-client-sdk
 │   ├── electron-sdk/               # @Clawppenheimer/ld-electron-sdk
 │   └── observability-node-client/  # @Clawppenheimer/ld-observability-node-client
 ├── .github/
@@ -390,7 +390,7 @@ export interface ObservabilityOptions {
 
 ### Purpose
 
-Modern Electron SDK that wires together the node-client-sdk (main process) and the official browser SDK (renderer process) via IPC, with observability in both processes.
+Modern Electron SDK that wires together the client-sdk (main process) and the official browser SDK (renderer process) via IPC, with observability in both processes.
 
 ### Dependencies
 

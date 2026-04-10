@@ -1,0 +1,17 @@
+{
+  "name": "observability-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Observability and monitoring example for unofficial-ld-node-client-sdk",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "unofficial-ld-node-client-sdk": "^0.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "electron-hello-world",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hello World example for unofficial-ld-electron-sdk (Electron desktop app)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --debug"
+  },
+  "dependencies": {
+    "unofficial-ld-node-client-sdk": "^0.1.0"
+  },
+  "devDependencies": {
+    "electron": "^latest"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

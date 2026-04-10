@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaunchDarkly Hello World - Electron</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 30px;
+      padding: 12px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #667eea;
+    }
+
+    .status.connected .indicator {
+      background: #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    .status.connecting .indicator {
+      background: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    .indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .flags-section {
+      margin-bottom: 30px;
+    }
+
+    .flags-section h2 {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .flag-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .flag-table th {
+      background: #f3f4f6;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .flag-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .flag-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .flag-name {
+      font-weight: 500;
+      color: #333;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .flag-value {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .flag-value.true {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .flag-value.false {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      min-width: 150px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+      background: #f0f4ff;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e7ff;
+      transform: translateY(-2px);
+    }
+
+    .event-log {
+      margin-top: 30px;
+      padding: 15px;
+      background: #f9fafb;
+      border-radius: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 12px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      color: #666;
+    }
+
+    .event-log-item {
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .event-log-item:last-child {
+      border-bottom: none;
+    }
+
+    .timestamp {
+      color: #999;
+      margin-right: 8px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🚀</div>
+      <h1>LaunchDarkly Client</h1>
+      <p>Electron Hello World Example</p>
+    </div>
+
+    <div class="status connecting" id="status">
+      <span class="indicator"></span>
+      <span>Connecting to LaunchDarkly...</span>
+    </div>
+
+    <div class="flags-section">
+      <h2>Feature Flags</h2>
+      <table class="flag-table">
+        <thead>
+          <tr>
+            <th>Flag Name</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody id="flags-tbody">
+          <tr>
+            <td colspan="2" style="text-align: center; color: #999;">Loading flags...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="trackEvent()">📈 Track Event</button>
+      <button class="btn-secondary" onclick="identifyNewUser()">👤 Identify User</button>
+      <button class="btn-secondary" onclick="refreshFlags()">🔄 Refresh</button>
+    </div>
+
+    <div class="event-log" id="event-log">
+      <div class="event-log-item">
+        <span class="timestamp">[INIT]</span> App started
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>LaunchDarkly Client-Side SDK • Unofficial Edition</p>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Handle flag updates from main process
+    ipcRenderer.on('flags-updated', (event, flagValues) => {
+      updateFlagsUI(flagValues);
+      updateStatus('connected');
+      addEventLog('Flag values updated');
+    });
+
+    // Update flags table
+    function updateFlagsUI(flagValues) {
+      const tbody = document.getElementById('flags-tbody');
+      tbody.innerHTML = '';
+
+      for (const [key, value] of Object.entries(flagValues)) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="flag-name">${key}</td>
+          <td>
+            <span class="flag-value ${value}">
+              ${value === true ? '✓ true' : '✗ false'}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    // Update connection status
+    function updateStatus(status) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${status}`;
+      statusEl.innerHTML = `
+        <span class="indicator"></span>
+        <span>${status === 'connected' ? '✓ Connected to LaunchDarkly' : 'Connecting to LaunchDarkly...'}</span>
+      `;
+    }
+
+    // Add event to log
+    function addEventLog(message) {
+      const log = document.getElementById('event-log');
+      const now = new Date().toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = 'event-log-item';
+      item.innerHTML = `<span class="timestamp">[${now}]</span> ${message}`;
+      log.appendChild(item);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Track event
+    async function trackEvent() {
+      try {
+        await ipcRenderer.invoke('track-event', 'button-clicked', {
+          timestamp: new Date().toISOString(),
+        });
+        addEventLog('Event tracked: button-clicked');
+      } catch (error) {
+        addEventLog(`Error: ${error.message}`);
+      }
+    }
+
+    // Identify new user
+    async function identifyNewUser() {
+      try {
+        const newUser = {
+          kind: 'user',
+          key: `electron-user-${Date.now()}`,
+          name: 'New User',
+        };
+        const flagValues = await ipcRenderer.invoke('identify-user', newUser);
+        addEventLog(`User identified: ${newUser.key}`);
+        updateFlagsUI(flagValues);
+      } catch (error) {
+        addEventLog(`Error: ${error.message}`);
+      }
+    }
+
+    // Refresh flags
+    async function refreshFlags() {
+      try {
+        const flagValues = await ipcRenderer.invoke('get-flags');
+        updateFlagsUI(flagValues);
+        addEventLog('Flags refreshed');
+      } catch (error) {
+        addEventLog(`Error: ${error.message}`);
+      }
+    }
+
+    // Initial load
+    async function loadInitialFlags() {
+      try {
+        const flagValues = await ipcRenderer.invoke('get-flags');
+        updateFlagsUI(flagValues);
+        updateStatus('connected');
+        addEventLog('Flags loaded');
+      } catch (error) {
+        addEventLog(`Error: ${error.message}`);
+      }
+    }
+
+    // Load on startup
+    loadInitialFlags();
+  </script>
+</body>
+</html>
